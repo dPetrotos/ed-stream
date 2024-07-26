@@ -6,6 +6,7 @@ package gr.codelearn.ed.stream.service;
 
 import gr.codelearn.ed.stream.model.CovidStatistics;
 import gr.codelearn.ed.stream.model.DeathsPerCountry;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,5 +49,37 @@ public class ReportingService {
                                                                 .getDeaths()))
                 .sorted(Comparator.comparing(DeathsPerCountry::deaths, Comparator.reverseOrder()).thenComparing(DeathsPerCountry::country))
                 .toList();
+    }
+
+    public Double calculateAverageNumberOfDeathsGlobally(final List<CovidStatistics> covidStatisticsList) {
+        return calculateMaxDeathsPerCountrySorted(covidStatisticsList)
+                .stream()
+                .collect(Collectors.averagingDouble(DeathsPerCountry::deaths));
+
+//        return calculateMaxDeathsPerCountry(covidStatisticsList)
+//                .stream()
+//                .mapToDouble(DeathsPerCountry::deaths)
+//                .average()
+//                .orElseThrow();
+    }
+
+    public List<String> findCountriesWithMoreThanAverageDeaths(final List<CovidStatistics> covidStatisticsList) {
+        return calculateMaxDeathsPerCountrySorted(covidStatisticsList)
+                .stream()
+                .filter(deathsPerCountry -> deathsPerCountry.deaths() > calculateAverageNumberOfDeathsGlobally(covidStatisticsList))
+                .map(DeathsPerCountry::country)
+                .sorted()
+                .toList();
+    }
+
+    public Integer calculateTotalDeathsByDateGlobally(final List<CovidStatistics> covidStatisticsList, final LocalDate date) {
+        return covidStatisticsList
+                .stream()
+                .filter(covidStatistics ->
+                        LocalDate
+                                .parse(covidStatistics.getDate())
+                                .equals(LocalDate.of(date.getYear(), date.getMonth(), 1)))
+                .collect(Collectors.summingInt(CovidStatistics::getDeaths));
+
     }
 }
